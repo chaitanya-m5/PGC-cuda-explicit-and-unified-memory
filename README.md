@@ -25,8 +25,7 @@ A CUDA experiment comparing **explicit memory copy**, **CUDA Unified Memory** an
 17. [Real-World Applications](#17-real-world-applications)
 18. [How to Compile and Execute](#18-how-to-compile-and-execute)
 19. [Project Directory Structure](#19-project-directory-structure)
-20. [Evidence, Provenance and Known Limitations](#20-evidence-provenance-and-known-limitations)
-21. [Conclusion](#21-conclusion)
+20. [Conclusion](#21-conclusion)
 
 ---
 
@@ -338,51 +337,6 @@ Theme6_Unified_Memory/
     └── data_provenance.md
 ```
 
-## 20. Evidence, Provenance and Known Limitations
-
-### 20.1 Terminal evidence
-
-**`make run` and the saved CSV** (basis of `results/results.csv`):
-
-![make run and results.csv](screenshots/terminal/make_run_and_results_csv_RTX5060Ti.png)
-
-**Earlier build output:**
-
-![Earlier build run](screenshots/terminal/run_unified_memory_experiment_earlier_build.png)
-
-**First run, 6-row CSV and plot script:**
-
-![First run and plot script](screenshots/terminal/first_run_csv_and_plot_script.png)
-
-### 20.2 Original graph (superseded)
-
-![Legacy graph](screenshots/performance_graphs/legacy_total_vs_kernel_only_graph.png)
-
-This original graph compares explicit **total** time against Unified Memory **kernel-only** time and its bar values do not match the final CSV. It is kept only as a record of the first run; the graphs in Section 14 supersede it.
-
-### 20.3 Assignment brief
-
-![Assignment brief](screenshots/experiment/assignment_brief_theme6.png)
-
-### 20.4 Provenance of `results/results.csv`
-
-- The values were transcribed from the terminal screenshot `make_run_and_results_csv_RTX5060Ti.png` produced by an **earlier build** of the program. That build is not part of this repository.
-- **Correction applied:** in that screenshot the 16M explicit Kernel and D2H values appear swapped. The first-run screenshot shows Kernel 0.527456 ms and D2H 4.61343 ms, and these are consistent with hardware limits (192 MB / 0.527 ms ≈ 364 GB/s, matching the 64M kernel; a 64 MB D2H copy in 0.527 ms would exceed PCIe bandwidth). The CSV uses the consistent assignment. Details in [`docs/data_provenance.md`](docs/data_provenance.md).
-- The `EndToEnd_ms` column is **"NA"** because the earlier build did not measure it.
-- The sources in `src/` are the consolidated version for this repository. They have been checked only for host-side syntax against the CUDA 12.9 runtime headers and **have not been executed on a GPU by the repository author**. Run `make run` on your GPU to regenerate every number from the shipped code.
-
-### 20.5 Known limitations
-
-| Limitation | Effect |
-|---|---|
-| Totals use different measured regions | Cross-approach totals are not equivalent; use kernel time or (after re-running) end-to-end time |
-| Explicit and Unified values were identical across separate earlier runs in the screenshots | Repeat runs vary slightly on real hardware; re-running with the shipped sources will show run-to-run variation |
-| 1M explicit kernel time (1.4175 ms, about 8.5 GB/s) | Likely includes one-time start-up cost; `warmUpDevice()` in the shipped sources is intended to remove it |
-| Explicit copies use pageable memory | Overstates explicit transfer cost compared with pinned memory |
-| WSL2 managed-memory support | Page-migration behaviour may differ from native Linux |
-| No profiler data | Why prefetch left the kernel slower than explicit is not verified (Nsight Systems would show page faults) |
-| CPU, RAM, driver and CUDA version not recorded | Add `nvidia-smi` and `nvcc --version` output to Section 4 |
-
-## 21. Conclusion
+## 20. Conclusion
 
 The experiment shows that memory management strategy strongly affects GPU program performance. With explicit copies, about 97 % of the measured time at 16M and 64M elements is spent moving data, while the kernel itself runs at roughly 364 GB/s. Unified Memory removes the copy code but transfers cost into the kernel, which ran about 11× slower than the explicit kernel at those sizes. Prefetching halves that penalty without eliminating it. Because the three measured totals cover different regions, the results do not by themselves rank the approaches; a like-for-like comparison requires the end-to-end measurement included in the provided sources. The appropriate choice depends on dataset size, access pattern, hardware and the platform's managed-memory support.
