@@ -1,0 +1,20 @@
+# Build output
+build/
+*.o
+*.out
+*.exe
+
+# Python
+__pycache__/
+*.pyc
+.venv/
+
+# Editor / OS
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
+
+# Profiler output
+*.nsys-rep
+*.ncu-rep
